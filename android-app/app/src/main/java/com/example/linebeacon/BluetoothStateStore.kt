@@ -50,6 +50,14 @@ class SettingsStore(context: Context) {
             else -> deviceMessage
         }
 
+    /**
+     * 画面・ログでHWIDをマスク表示するか。既定はON(公開画面スクショ等の安全策)。
+     * 発信されるフレーム自体はマスクの有無にかかわらず本物のHWIDを送る。
+     */
+    var hwidMasked: Boolean
+        get() = prefs.getBoolean(KEY_HWID_MASKED, true)
+        set(value) = prefs.edit().putBoolean(KEY_HWID_MASKED, value).apply()
+
     /** Loads the saved inputs as a [BeaconConfig] when they are still valid. */
     fun loadConfig(): BeaconConfig? =
         BeaconConfig.newInstance(hwid, deviceMessage).getOrNull()
@@ -61,6 +69,7 @@ class SettingsStore(context: Context) {
         private const val KEY_DEVICE_MESSAGE_TEXT_MODE = "device_message_text_mode"
         private const val KEY_DEVICE_MESSAGE_TEXT = "device_message_text"
         private const val KEY_DEVICE_MESSAGE_MODE = "device_message_mode"
+        private const val KEY_HWID_MASKED = "hwid_masked"
 
         const val MODE_HEX = "hex"
         const val MODE_TEXT = "text"

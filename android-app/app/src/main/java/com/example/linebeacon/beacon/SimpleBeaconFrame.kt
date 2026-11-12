@@ -83,15 +83,16 @@ object SimpleBeaconFrame {
         return if (parsed.isEmpty()) byteArrayOf(0x00) else parsed
     }
 
-    /** Battery dmの接頭辞。dmは "B85" のようなASCII (残量パーセント) になる。 */
-    const val BATTERY_DM_PREFIX: String = "B"
-
     /**
-     * バッテリー残量(%)を動的Device Message用のASCII dmにする。
-     * 例: 85 → "B85"。0..100にクランプする。
+     * バッテリー残量(%)を動的Device Message用のテキストにする。
+     * 例: 85 → "🔋85%"(UTF-8で7バイト、上限13バイトに収まる)。0..100にクランプ。
      */
+    fun batteryDeviceMessageText(level: Int): String =
+        "🔋${level.coerceIn(0, 100)}%"
+
+    /** [batteryDeviceMessageText] をdm HEX(大文字)にしたもの。 */
     fun batteryDeviceMessageHex(level: Int): String =
-        deviceMessageHexFromText(BATTERY_DM_PREFIX + level.coerceIn(0, 100)).orEmpty()
+        deviceMessageHexFromText(batteryDeviceMessageText(level)).orEmpty()
 
     /**
      * Validates a HWID input and returns an error message, or null when valid.
@@ -144,4 +145,30 @@ object SimpleBeaconFrame {
             text.none { it.code < 0x20 }
         return if (lossless) text else null
     }
+
+    // ---- 表示用マスク(発信内容には影響しない) ----
+
+    /**
+     * 画面表示・ログ用にHWIDをマスクする(先頭2桁と末尾2桁のみ残す)。
+     * 例: 0102030405 → 01••••••05。長さがHWIDでない入力はそのまま返す。
+     */
+    fun maskHwid(hwidHex: String): String =
+        if (hwidHex.length == HWID_HEX_LENGTH) {
+            hwidHex.take(2) + "•".repeat(HWID_HEX_LENGTH - 4) + hwidHex.takeLast(2)
+        } else {
+            hwidHex
+        }
+
+    /**
+     * フレームHEX表示の中のHWID部分(先頭のFrameType2桁に続く10桁)を[maskHwid]と
+     * 同様にマスクする。例: 0232AF519E887F… → 02 32••••••88 7F…
+     * フレームとして短すぎる入力はそのまま返す。
+     */
+    fun maskHwidInFrameHex(frameHex: String): String =
+        if (frameHex.length >= 2 + HWID_HEX_LENGTH) {
+            frameHex.take(2) + maskHwid(frameHex.substring(2, 2 + HWID_HEX_LENGTH)) +
+                frameHex.drop(2 + HWID_HEX_LENGTH)
+        } else {
+            frameHex
+        }
 }

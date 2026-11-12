@@ -12,6 +12,7 @@
  *   LINE_CHANNEL_SECRET        Messaging APIチャネルのChannel secret(署名検証)
  *   LINE_CHANNEL_ACCESS_TOKEN  (任意) 返信メッセージ送信用
  *   PORT / WEBHOOK_PATH        (任意) 既定は 65135 / /webhook
+ *   MASK_HWID                  (任意) 既定1=ログ・返信のHWIDをマスク表示(0で解除)
  */
 
 const http = require('http');
@@ -27,6 +28,15 @@ const PORT = Number(process.env.PORT || '65135');
 const WEBHOOK_PATH = process.env.WEBHOOK_PATH || '/webhook';
 const CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || '';
 const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
+// HWIDのログ/返信をマスク表示するか。既定ON。公開画面等にログを共有する想定。
+// NOTE: 古いNodeにも配慮して ?? ではなく || を使う(設定値は '0' 以外すべてマスク有効)
+const MASK_HWID = String(process.env.MASK_HWID || '1') !== '0';
+
+/** HWIDをマスク表示する(先頭2桁と末尾2桁のみ残す。例: 0102030405 → 01••••••05)。 */
+function maskHwid(hwid) {
+  if (!MASK_HWID || typeof hwid !== 'string' || hwid.length < 4) return hwid;
+  return hwid.slice(0, 2) + '•'.repeat(Math.max(hwid.length - 4, 2)) + hwid.slice(-2);
+}
 
 const MAX_BODY_BYTES = 1024 * 1024; // LINEのWebhookは数KB程度。安全側の上限。
 
@@ -91,7 +101,7 @@ function describeBeaconEvent(event) {
     '━━━ 📡 ビーコン検知! ━━━',
     `  時刻   : ${when}`,
     `  種別   : ${b.type || '(unknown)'}   ${b.sc ? `(sc=${b.sc})` : ''}`,
-    `  HWID   : ${b.hwid || '(unknown)'}`,
+    `  HWID   : ${maskHwid(b.hwid) || '(unknown)'}`,
     `  dm     : ${dm}`,
     `  検知元 : ${who}`,
     '━━━━━━━━━━━━━━━━━━━',
@@ -180,7 +190,7 @@ const server = http.createServer((req, res) => {
           const b = event.beacon || {};
           replyText(
             event.replyToken,
-            `📡 ビーコン検知!\nイベント: ${b.type}\nHWID: ${b.hwid||'?'}\ndm: ${formatDm(b.dm)}`,
+            `📡 ビーコン検知!\nイベント: ${b.type}\nHWID: ${maskHwid(b.hwid) || '?'}\ndm: ${formatDm(b.dm)}`,
           );
         } else if (event.type === 'message' && event.message && event.message.type === 'text') {
           // オウム返し: 届いたテキストをそのまま返す(LINE bot動作確認用)

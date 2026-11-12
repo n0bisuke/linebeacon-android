@@ -45,3 +45,11 @@ Device Message入力を3モードに拡張(FilterChip + 設定永続化):
 - onCreateでAndroid SDK(platforms;android-36 等)+ライセンス承認、Nodeはfeatureで
 - linebotのポート65135はport forwarding、**LINEのWebhookにはport visibilityを「Public」に**する必要あり(認証付きURLはLINEサーバーが取れない)
 - 実機への `adb install` はLAN外から不可 → APKをReleases等で渡す
+
+## 追記: HWIDマスク表示(2026-11-12)
+
+発信HWIDは仕様上そのままBLEに乗るため、**画面共有・スクショ・サーバーログ公開時の安全策**としてマスク表示を実装:
+
+- Android側: アプリ内の「HWIDをマスク表示」スイッチ(既定ON)。設定カードのフレームプレビュー・発信状態・ログのHWIDを先頭2桁+末尾2桁のみ表示(`01••••••05`)。**発信フレーム自体は常に本物のHWID**
+- linebot側: `MASK_HWID` 環境変数(既定ON)。検知ログと返信メッセージのHWIDを同フォーマットでマスク。0で解除
+- Nodeの古いバージョン(12)でも動くよう `??` を使わず `||` で書いた(コンテナ/nodeの差異で詰まないため)

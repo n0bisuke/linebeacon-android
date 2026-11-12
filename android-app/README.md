@@ -13,6 +13,7 @@ Androidスマートフォン単体でLINE Simple BeaconのBLE広告を発信す�
   - レガシー広告(Bluetooth 4.0互換)のみを使用。iBeacon等の別形式には置き換えない
 - 画面を閉じても発信を続けるため Foreground Service(`connectedDevice`)で広告を維持
 - HWID / Device Message を端末内(SharedPreferences)に保存。外部送信は一切しない
+- **HWIDマスク表示**(既定ON): 画面・ログのHWIDを `01••••••05` のように先頭2桁と末尾2桁だけ表示。発信されるフレーム自体には常に本物のHWIDが入る(LINEの仕様上不可欠)。スクショ公開時の安全策
 
 対応仕様・参考: [line/line-simple-beacon](https://github.com/line/line-simple-beacon)、[ビーコン端末仕様](https://developers.line.biz/ja/docs/messaging-api/beacon-device-spec/)、[LINEでビーコンを使う](https://developers.line.biz/ja/docs/messaging-api/using-beacons/)
 

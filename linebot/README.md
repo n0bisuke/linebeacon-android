@@ -21,6 +21,8 @@ cp .env.example .env          # LINE_CHANNEL_SECRET を貼る(.envはコミッ�
 node server.js                # 既定: http://localhost:65135/webhook (npm startでも可)
 ```
 
+**HWIDのマスク表示**: 既定でON。ログ・返信に表示されるHWIDが `0102030405 → 01••••••05` のように先頭2桁と末尾2桁だけになります(画面共有やスクショを公開する際の安全策)。実HWIDを見たい場合は `.env` に `MASK_HWID=0` を書いて再起動。
+
 ## HTTPS公開について
 
 LINEのWebhookは**公開されたHTTPS URL**が必須のため、ローカル実行のままでは届きません。開発中の確認はトンネルを使うのが手軽:
@@ -39,7 +41,7 @@ npx ngrok http 65135          # 例: https://xxxx.ngrok-free.app
 ━━━ 📡 ビーコン検知! ━━━
   時刻   : 2026/11/12 15:30:00
   種別   : enter
-  HWID   : 0102030405
+  HWID   : 01••••••05   (マスク表示。MASK_HWID=0 で実値表示)
   dm     : 0x1122aabbcc
   検知元 : userId=U4af49d00…
 ━━━━━━━━━━━━━━━━━━━

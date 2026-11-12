@@ -135,29 +135,54 @@ class SimpleBeaconFrameTest {
 
     @Test
     fun `battery dm message`() {
-        // ASCII "B85" = 0x42 0x38 0x35
-        assertEquals("423835", SimpleBeaconFrame.batteryDeviceMessageHex(85))
-        assertEquals(SimpleBeaconFrame.BATTERY_DM_PREFIX + "85", "B85")
+        // "🔋85%" = U+1F50B(4B) + "85"(2B) + "%"(1B) = 7バイトUTF-8
+        assertEquals("🔋85%", SimpleBeaconFrame.batteryDeviceMessageText(85))
+        assertEquals("F09F948B3835 25".replace(" ", ""), SimpleBeaconFrame.batteryDeviceMessageHex(85))
         // 桁数は可変(1%..100%)
-        assertEquals("4231", SimpleBeaconFrame.batteryDeviceMessageHex(1)) // "B1"
-        assertEquals("42313030", SimpleBeaconFrame.batteryDeviceMessageHex(100)) // "B100"
+        assertEquals("F09F948B3125", SimpleBeaconFrame.batteryDeviceMessageHex(1)) // "🔋1%"
+        assertEquals("F09F948B31303025", SimpleBeaconFrame.batteryDeviceMessageHex(100)) // "🔋100%"
         // クランプ
         assertEquals(SimpleBeaconFrame.batteryDeviceMessageHex(0), SimpleBeaconFrame.batteryDeviceMessageHex(-5))
         assertEquals(SimpleBeaconFrame.batteryDeviceMessageHex(100), SimpleBeaconFrame.batteryDeviceMessageHex(120))
         // 13バイト上限を大きく下回る
-        assertTrue(Hex.decode(SimpleBeaconFrame.batteryDeviceMessageHex(85))!!.size <= 13)
+        assertTrue(Hex.decode(SimpleBeaconFrame.batteryDeviceMessageHex(100))!!.size <= 13)
 
         // フレームとして組める
         val frame = SimpleBeaconFrame.buildFrame(
             Hex.decode("32AF519E88")!!,
             SimpleBeaconFrame.deviceMessageBytes(SimpleBeaconFrame.batteryDeviceMessageHex(85))!!,
         )
-        assertEquals("0232AF519E887F423835", Hex.encode(frame))
+        assertEquals("0232AF519E887FF09F948B383525", Hex.encode(frame))
     }
 
     @Test
     fun `config factory rejects invalid input`() {
         assertTrue(BeaconConfig.newInstance("12345", "").isFailure)
         assertTrue(BeaconConfig.newInstance("32AF519E88", "XYZ").isFailure)
+    }
+
+    // ---- HWIDマスク表示 ----
+
+    @Test
+    fun `hwid masking keeps first and last two digits`() {
+        assertEquals("32••••••88", SimpleBeaconFrame.maskHwid("32AF519E88"))
+        assertEquals("01••••••05", SimpleBeaconFrame.maskHwid("0102030405"))
+    }
+
+    @Test
+    fun `hwid masking leaves unexpected length untouched`() {
+        // 10桁以外の入力(=未検証・空欄等)はそのまま表示する
+        assertEquals("", SimpleBeaconFrame.maskHwid(""))
+        assertEquals("32AF519E8", SimpleBeaconFrame.maskHwid("32AF519E8"))
+    }
+
+    @Test
+    fun `frame masking blurs only hwid part`() {
+        // HWID部分だけが maskHwid と同じ形式になる(frame typeとdm部分は元のまま)
+        val frame = "0232AF519E887FF09F948B383525"
+        assertEquals("0232••••••887FF09F948B383525", SimpleBeaconFrame.maskHwidInFrameHex(frame))
+        // 短い文字列はそのまま
+        assertEquals("0232", SimpleBeaconFrame.maskHwidInFrameHex("0232"))
+        assertEquals("", SimpleBeaconFrame.maskHwidInFrameHex(""))
     }
 }

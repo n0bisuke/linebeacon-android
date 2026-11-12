@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -72,6 +73,12 @@ fun BeaconScreen() {
     var deviceMessage by remember { mutableStateOf(controller.settings.deviceMessage) }
     var dmMode by remember { mutableStateOf(controller.settings.deviceMessageMode) }
     var dmText by remember { mutableStateOf(controller.settings.deviceMessageText) }
+    var hwidMasked by remember { mutableStateOf(controller.settings.hwidMasked) }
+
+    /** マスク設定に応じたHWID表示(フレームプレビュー・発信状態カード両方が対象)。 */
+    val displayFrame: (String) -> String = { hex ->
+        if (hwidMasked) SimpleBeaconFrame.maskHwidInFrameHex(hex) else hex
+    }
 
     val status by controller.advertiser.status.collectAsState()
     val caps by controller.advertiser.capabilities.collectAsState()
@@ -266,10 +273,24 @@ fun BeaconScreen() {
                 }
                 config?.let {
                     Text(
-                        "Service Data (UUID 0xFE6F): 0x6FFE ${it.frameHex}",
+                        "Service Data (UUID 0xFE6F): 0x6FFE ${displayFrame(it.frameHex)}",
                         fontFamily = FontFamily.Monospace,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "HWIDをマスク表示",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = hwidMasked,
+                        onCheckedChange = {
+                            hwidMasked = it
+                            controller.settings.hwidMasked = it
+                        },
                     )
                 }
             }
@@ -320,7 +341,7 @@ fun BeaconScreen() {
                             OkGreen,
                         )
                         Text(
-                            "frame: ${s.frameHex}",
+                            "frame: ${displayFrame(s.frameHex)}",
                             fontFamily = FontFamily.Monospace,
                             style = MaterialTheme.typography.bodySmall,
                         )

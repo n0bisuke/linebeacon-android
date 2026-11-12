@@ -74,8 +74,8 @@ class BeaconController(context: Context) {
             }
 
         log(
-            "開始: HWID=${config.hwidHex} DeviceMessage=${config.deviceMessageHex.ifEmpty { "(0x00)" }} " +
-                "frame=${Hex.encode(config.frame)}"
+            "開始: HWID=${displayHwid(config.hwidHex)} DeviceMessage=${config.deviceMessageHex.ifEmpty { "(0x00)" }} " +
+                "frame=${displayFrame(Hex.encode(config.frame))}"
         )
         return when (val result = advertiser.start(config.frame)) {
             is com.example.linebeacon.beacon.StartResult.Started -> {
@@ -97,6 +97,14 @@ class BeaconController(context: Context) {
         dynamicDmJob = null
         advertiser.stop()
     }
+
+    /** ログ表示用: マスク設定が有効ならHWIDをぼかす。 */
+    private fun displayHwid(hwidHex: String): String =
+        if (settings.hwidMasked) SimpleBeaconFrame.maskHwid(hwidHex) else hwidHex
+
+    /** ログ表示用: マスク設定が有効ならフレーム内のHWID部分をぼかす。 */
+    private fun displayFrame(frameHex: String): String =
+        if (settings.hwidMasked) SimpleBeaconFrame.maskHwidInFrameHex(frameHex) else frameHex
 
     /**
      * バッテリー残量(%)を取得。BATTERY_PROPERTY_CAPACITYが取れない端末では
@@ -134,7 +142,7 @@ class BeaconController(context: Context) {
                     // 値が変わった時だけ端末側の広告データを差し替える
                     if (hex != sentHex && advertiser.updateAdvertisingData(frame)) {
                         sentHex = hex
-                        log("バッテリー更新: dm=$hex frame=${Hex.encode(frame)}")
+                        log("バッテリー更新: dm=$hex frame=${displayFrame(Hex.encode(frame))}")
                     }
                 }
                 delay(DYNAMIC_DM_INTERVAL_MS)

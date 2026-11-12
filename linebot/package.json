@@ -1,0 +1,10 @@
+{
+  "name": "linebot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LINE Simple Beacon確認用Webhookサーバー(依存ライブラリなし)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

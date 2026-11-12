@@ -85,25 +85,15 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 4. 「発信停止」または通知上の「停止」で終了
 5. 「発信状態」カードに間隔・TxPower・送出中フレームHEX、「ログ」に操作履歴とエラーを表示
 
-## BLE広告の確認方法(nRF Connect)
+## 試す手順(クイックスタート)
 
-別のAndroid端末に [nRF Connect for Mobile](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp) をインストールし:
+インストール後、次の3段階で動作を確認できる。詳細な手順は **[docs/TESTING.md](docs/TESTING.md)** を参照。
 
-1. SCANNER を開きフィルタ `0xFE6F`(Service Data)を設定、またはSCAN直後に該当端末を探す
-2. 該当アドバタイズを展開すると以下が見える:
-   - **Service UUID: `0xFE6F`**
-   - **Service Data: `6FFE 02 <HWID 10桁> 7F <Device Message>`** (例: `6FFE 0232AF519E887F 00320069...` ※ダミーHWID)
-3. Flags AD (`0x06`) はAndroidが自動付与するため、パケット全体は公式仕様のオクテット構成と一致する
+1. **BLEパケット確認(nRF Connect)** — HWID登録不要。ダミーHWIDでもOK。Service Data `6FFE 02 <HWID> 7F <dm>` が見えればフレーム生成は仕様どおり
+2. **LINEアプリでの検知** — 本物のHWID(LINE Official Account Managerで発行)を入力して発信し、受信側端末で「LINE Beacon有効化+友だち追加」して近づける
+3. **Webhook配信確認(Messaging API)** — Webhook URLを設定し、`type: "beacon"` イベントの受信を確認([webhook.site](https://webhook.site)を使うと手軽)
 
-## LINE Botとの連携確認方法(要実機・公式アカウント)
-
-1. LINE Official Account Managerでビーコン(HWID)を公式アカウントに登録済みであること
-2. LINE Developers Consoleで Messaging APIチャネルのWebhook URLを設定し、「Webhookの利用」を有効化(検証は [Webhookイベント接收確認](https://developers.line.biz/console/) または自前の受信サーバー)
-3. 受信側スマートフォンで: Bluetoothオン・[設定]>[プライバシー管理]>[LINE Beacon]有効化・対象公式アカウントを友だち追加
-4. 発信側端末で「発信開始」し、受信側端末を近づける(数十cm〜数m)
-5. 受信サーバーに `type: "beacon"`, `beacon.type: "enter"`, `beacon.hwid`, `beacon.dm` を含むWebhookが届くことを確認
-
-**注意**: LINE Beacon機能は日本・台湾・タイでのみ動作する。また「ビーコン検知」は発信側・受信側とも実機が必要で、本リポジトリのCI/ビルド環境では検証不能。**Webhook受信の成功は本プロジェクトでは未検証**。検知されない場合は、HWIDが正しい公式アカウントに登録されているか、LINE Beacon設定が有効か、友だち追加済みかを確認すること。
+※LINE Beaconは日本・台湾・タイでのみ動作。検知側は発信側と別端末を使用すること
 
 ## 動作上の制約
 
@@ -119,3 +109,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - BLE制御は `com.example.linebeacon.beacon`(`BeaconAdvertiser` / `SimpleBeaconFrame` / `Hex`)に分離し、UI (`MainActivity`) から触らない
 - Device Messageを将来センサー値等から動的に変えたい場合は、`BeaconConfig.frame` の生成差し替え(または `BeaconAdvertiser.start(frame)` に直接 ByteArray を渡す)で対応可能
 - テスト: `./gradlew test` — 仕様例(HWID `32AF519E88` + 13バイトdm)を含むフレーム生成、HEX変換、異常入力拒否をカバー
+
+## License
+
+[MIT](../LICENSE)

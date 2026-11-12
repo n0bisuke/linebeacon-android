@@ -58,7 +58,7 @@ cd /workspace/android-app
 
 ### GitHub Codespacesでビルドする場合
 
-リポジトリルートの `.devcontainer/` により、Codespaceを開くとAndroid SDK(licenses承認済み)とNode.jsがセットアップ済みになります:
+リポジトリルートの `.devcontainer/` により、Codespaceを開くとAndroid SDK(licenses承認済み)とNode.jsがセットアップ済みになります。**Codespacesでの一連の手順(ビルド→APK取得→linebot公開→Webhook設定)は [docs/CODESPACES.md](../docs/CODESPACES.md) にまとめてあります**:
 
 ```bash
 cd android-app                    # gradleプロジェクトルート

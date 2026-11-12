@@ -25,7 +25,7 @@ node server.js                # 既定: http://localhost:65135/webhook (npm star
 
 ## HTTPS公開について
 
-LINEのWebhookは**公開されたHTTPS URL**が必須のため、ローカル実行のままでは届きません。開発中の確認はトンネルを使うのが手軽:
+LINEのWebhookは**公開されたHTTPS URL**が必須のため、ローカル実行のままでは届きません。**GitHub Codespacesで公開する手順は [docs/CODESPACES.md](../docs/CODESPACES.md)** を参照(ポート公開の「Public」変更がポイント)。ローカル実行時はトンネルを使うのが手軽:
 
 ```bash
 npx ngrok http 65135          # 例: https://xxxx.ngrok-free.app

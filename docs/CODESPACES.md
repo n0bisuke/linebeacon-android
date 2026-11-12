@@ -17,12 +17,17 @@ cd android-app
 ./gradlew test assembleDebug     # ANDROID_HOMEはdevcontainerで設定済み
 ```
 
-APKは `app/build/outputs/apk/debug/app-debug.apk` にできる。
+APKは `app/build/outputs/apk/debug/app-debug.apk` にできる。linebotで公開するため共有用にコピーしておく:
 
-**端末へのINSTALLについて**: Codespaceはクラウド上にあり、LAN内の実機(無線ADB)には直接届きません。APKを手元へ持ってきて手動インストールします:
+```bash
+mkdir -p dist && cp app/build/outputs/apk/debug/app-debug.apk dist/app-debug.apk
+```
 
-- VS Codeのエクスプローラーで `app-debug.apk` を右クリック → **Download...** でローカルに保存
-- 保存したAPKをスマホに転送(Google Drive / AirDrop / ケーブル等)し、端末上でタップしてインストール(「提供元不明アプリ」の許可が必要)
+**実機へのINSTALL**は、後で起動するlinebotの公開URLから直接できる(下の「3.」とセット):
+
+- スマホのブラウザで **`https://<codespace名>-65135.app.github.dev/apk`** を開くとAPKがダウンロードされ、タップでインストールできる(「提供元不明アプリ」の許可が必要)
+- **LINEで配布**も可能: 実機のトークでbotに **`apk` と送信**すると、botがダウンロードURLを返信する。そのURLをタップ→ダウンロード→インストール。URLは自分の他の端末や友だちに転送してもOK(Publicポート必須)
+- うまくいかない場合の代替: VS Codeのエクスプローラーで `app-debug.apk` を右クリック → **Download...** でローカル保存し、端末へ手動転送
 - HWIDやdmの設定はすべて端末側のアプリ画面で行う(Codespace側の設定は不要)
 - アプリ自体はブラウザ上では動かない(実機インストールが必須)
 
@@ -55,6 +60,7 @@ npm start                        # :65135 で待受(0xFE6F)
 1. 実機アプリで「発信開始」し、LINEが入っている受信側端末を近くに置く(同一HWIDが公式アカウントに登録済みのこと)
 2. linebotのターミナルに `📡 ビーコン検知!` のログが出る(HWIDは既定でマスク表示、`MASK_HWID=0` で解除)
 3. アクセストークンを設定していれば、検知元ユーザーのトークに返信が届く
+4. トークで `apk` と送ると、APKダウンロードURL(`https://<codespace名>-65135.app.github.dev/apk`)が返ってくる
 
 ## 制限・注意
 

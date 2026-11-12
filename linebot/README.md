@@ -8,6 +8,7 @@ Androidビーコン発信側の検証用に、Messaging APIのWebhookを受信�
 - Channel secretによる**署名検証**(`x-line-signature`)
 - `LINE_CHANNEL_ACCESS_TOKEN` を設定すると、**検知をLINEのトークに返信**(`📡 ビーコン検知!` メッセージ)
 - トークン設定時に受け取った**テキストメッセージにはオウム返し**で返信(botの疎通確認用)
+- **APK配信**: `GET /apk` で `android-app/dist/app-debug.apk` をダウンロード配信。トークで **`apk` と送るとダウンロードURLを返信**(実機インストール用。`APK_FILE` / `APK_PATH` 環境変数で変更可)
 
 ## セットアップ
 

@@ -13,6 +13,7 @@
  *   LINE_CHANNEL_ACCESS_TOKEN  (任意) 返信メッセージ送信用
  *   PORT / WEBHOOK_PATH        (任意) 既定は 65135 / /webhook
  *   MASK_HWID                  (任意) 既定1=ログ・返信のHWIDをマスク表示(0で解除)
+ *   APK_FILE / APK_PATH        (任意) GET /apk で配信するAPKとパス(実機インストール用)
  */
 
 const http = require('http');
@@ -31,6 +32,11 @@ const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
 // HWIDのログ/返信をマスク表示するか。既定ON。公開画面等にログを共有する想定。
 // NOTE: 古いNodeにも配慮して ?? ではなく || を使う(設定値は '0' 以外すべてマスク有効)
 const MASK_HWID = String(process.env.MASK_HWID || '1') !== '0';
+// GET ${APK_PATH} で配信するAPKファイル。Codespaces等クラウド環境では実機への
+// adbが届かないため、このURLを端末ブラウザで開いて直接インストールできる。
+const APK_FILE = process.env.APK_FILE ||
+  path.join(__dirname, '..', 'android-app', 'dist', 'app-debug.apk');
+const APK_PATH = process.env.APK_PATH || '/apk';
 
 /** HWIDをマスク表示する(先頭2桁と末尾2桁のみ残す。例: 0102030405 → 01••••••05)。 */
 function maskHwid(hwid) {
@@ -143,7 +149,28 @@ function replyText(replyToken, text) {
 const server = http.createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/') {
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end(`LINE Beacon webhook server\nPOST ${WEBHOOK_PATH} で待機中\n`);
+    res.end(`LINE Beacon webhook server\nPOST ${WEBHOOK_PATH} で待機中\nGET ${APK_PATH} でAPKを配信中\n`);
+    return;
+  }
+
+  // APK配信(Codespaces等、adbが届かない環境での実機インストール用)。
+  // Androidは application/vnd.android.package-archive でパッケージとして認識する
+  if (req.method === 'GET' && req.url === APK_PATH) {
+    fs.stat(APK_FILE, (err, stat) => {
+      if (err || !stat.isFile()) {
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end(`APKが見つかりません: android-app/dist/app-debug.apk をビルドして配置してください\n`);
+        return;
+      }
+      res.writeHead(200, {
+        'Content-Type': 'application/vnd.android.package-archive',
+        'Content-Length': stat.size,
+        'Content-Disposition': 'attachment; filename="app-debug.apk"',
+      });
+      fs.createReadStream(APK_FILE)
+        .on('error', () => res.destroy())
+        .pipe(res);
+    });
     return;
   }
 
@@ -184,6 +211,10 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end('{}');
 
+      // APK配信URL。このWebhookは公開URLで受けているためHostヘッダがそのURLになり、
+      // 環境変数なしでCodespaces等の公開アドレスを組める
+      const apkUrl = `https://${req.headers.host || `localhost:${PORT}`}${APK_PATH}`;
+
       for (const event of payload.events || []) {
         if (event.type === 'beacon') {
           console.log(describeBeaconEvent(event));
@@ -193,9 +224,19 @@ const server = http.createServer((req, res) => {
             `📡 ビーコン検知!\nイベント: ${b.type}\nHWID: ${maskHwid(b.hwid) || '?'}\ndm: ${formatDm(b.dm)}`,
           );
         } else if (event.type === 'message' && event.message && event.message.type === 'text') {
-          // オウム返し: 届いたテキストをそのまま返す(LINE bot動作確認用)
-          console.log(`[message] オウム返し: ${event.message.text}`);
-          replyText(event.replyToken, event.message.text);
+          const text = event.message.text.trim();
+          // 「apk」と送るとAPKのダウンロードURLを返す(実機インストール用)
+          if (text.toLowerCase() === 'apk') {
+            console.log(`[message] APK URLを返信: ${apkUrl}`);
+            replyText(
+              event.replyToken,
+              `⬇️ アプリのダウンロード\n${apkUrl}\n\nURLを開いてAPKをダウンロード後、インストールしてください(「提供元不明アプリ」の許可が必要です)`,
+            );
+          } else {
+            // オウム返し: 届いたテキストをそのまま返す(LINE bot動作確認用)
+            console.log(`[message] オウム返し: ${text}`);
+            replyText(event.replyToken, text);
+          }
         } else {
           console.log(`[webhook] 他イベント: type=${event.type}`);
         }

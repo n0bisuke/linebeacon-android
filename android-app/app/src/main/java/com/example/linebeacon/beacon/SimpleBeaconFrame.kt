@@ -83,6 +83,16 @@ object SimpleBeaconFrame {
         return if (parsed.isEmpty()) byteArrayOf(0x00) else parsed
     }
 
+    /** Battery dmの接頭辞。dmは "B85" のようなASCII (残量パーセント) になる。 */
+    const val BATTERY_DM_PREFIX: String = "B"
+
+    /**
+     * バッテリー残量(%)を動的Device Message用のASCII dmにする。
+     * 例: 85 → "B85"。0..100にクランプする。
+     */
+    fun batteryDeviceMessageHex(level: Int): String =
+        deviceMessageHexFromText(BATTERY_DM_PREFIX + level.coerceIn(0, 100)).orEmpty()
+
     /**
      * Validates a HWID input and returns an error message, or null when valid.
      */

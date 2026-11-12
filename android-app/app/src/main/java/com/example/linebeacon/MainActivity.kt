@@ -70,7 +70,7 @@ fun BeaconScreen() {
 
     var hwid by remember { mutableStateOf(controller.settings.hwid) }
     var deviceMessage by remember { mutableStateOf(controller.settings.deviceMessage) }
-    var dmTextMode by remember { mutableStateOf(controller.settings.deviceMessageTextMode) }
+    var dmMode by remember { mutableStateOf(controller.settings.deviceMessageMode) }
     var dmText by remember { mutableStateOf(controller.settings.deviceMessageText) }
 
     val status by controller.advertiser.status.collectAsState()
@@ -79,21 +79,21 @@ fun BeaconScreen() {
 
     val hwidError = remember(hwid) { SimpleBeaconFrame.hwidError(hwid) }
 
-    // テキストモードでは入力テキストをUTF-8 HEXに自動変換してHEXモードと同じ検証に渡す。
-    // 変換結果はそのまま発信フレームのDevice Messageになる。
-    val dmHex = if (dmTextMode) {
-        SimpleBeaconFrame.deviceMessageHexFromText(dmText) // null: 13バイト超過
-    } else {
-        deviceMessage
+    // 各モードでの実効dm(大文字HEX)。テキストはUTF-8変換、バッテリーは現在値から生成。
+    val dmHex: String? = when (dmMode) {
+        SettingsStore.MODE_TEXT -> SimpleBeaconFrame.deviceMessageHexFromText(dmText)
+        SettingsStore.MODE_BATTERY -> SimpleBeaconFrame.batteryDeviceMessageHex(controller.readBatteryLevel())
+        else -> deviceMessage
     }
-    val dmError: String? = if (dmTextMode) {
-        if (dmHex == null) {
-            "テキストはUTF-8で${SimpleBeaconFrame.DEVICE_MESSAGE_MAX_BYTES}バイト以内にしてください(日本語は最大4文字)"
-        } else {
-            null
-        }
-    } else {
-        SimpleBeaconFrame.deviceMessageError(deviceMessage)
+    val dmError: String? = when (dmMode) {
+        SettingsStore.MODE_TEXT ->
+            if (dmHex == null) {
+                "テキストはUTF-8で${SimpleBeaconFrame.DEVICE_MESSAGE_MAX_BYTES}バイト以内にしてください(日本語は最大4文字)"
+            } else {
+                null
+            }
+        SettingsStore.MODE_BATTERY -> null
+        else -> SimpleBeaconFrame.deviceMessageError(deviceMessage)
     }
     val config = dmHex?.let { BeaconConfig.newInstance(hwid, it).getOrNull() }
 
@@ -182,30 +182,36 @@ fun BeaconScreen() {
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                // Device Messageの入力モード切替(HEX / テキスト)
+                // Device Messageの入力モード切替(HEX / テキスト / バッテリー自動)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(
-                        selected = !dmTextMode,
+                        selected = dmMode == SettingsStore.MODE_HEX,
                         onClick = {
-                            // テキスト→HEX: 変換できる場合は結果をHEX欄に引き継ぐ
-                            SimpleBeaconFrame.deviceMessageHexFromText(dmText)?.let { deviceMessage = it }
-                            dmTextMode = false
-                            controller.settings.deviceMessageTextMode = false
+                            dmMode = SettingsStore.MODE_HEX
+                            controller.settings.deviceMessageMode = SettingsStore.MODE_HEX
                         },
-                        label = { Text("HEXで入力") },
+                        label = { Text("HEX") },
                     )
                     FilterChip(
-                        selected = dmTextMode,
+                        selected = dmMode == SettingsStore.MODE_TEXT,
                         onClick = {
                             // HEX→テキスト: 復元できる場合はテキスト欄に引き継ぐ
                             SimpleBeaconFrame.textFromDeviceMessageHex(deviceMessage)?.let { dmText = it }
-                            dmTextMode = true
-                            controller.settings.deviceMessageTextMode = true
+                            dmMode = SettingsStore.MODE_TEXT
+                            controller.settings.deviceMessageMode = SettingsStore.MODE_TEXT
                         },
-                        label = { Text("テキストで入力") },
+                        label = { Text("テキスト") },
+                    )
+                    FilterChip(
+                        selected = dmMode == SettingsStore.MODE_BATTERY,
+                        onClick = {
+                            dmMode = SettingsStore.MODE_BATTERY
+                            controller.settings.deviceMessageMode = SettingsStore.MODE_BATTERY
+                        },
+                        label = { Text("バッテリー自動") },
                     )
                 }
-                if (dmTextMode) {
+                if (dmMode == SettingsStore.MODE_TEXT) {
                     OutlinedTextField(
                         value = dmText,
                         onValueChange = {
@@ -229,6 +235,12 @@ fun BeaconScreen() {
                         isError = dmError != null,
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
+                    )
+                } else if (dmMode == SettingsStore.MODE_BATTERY) {
+                    Text(
+                        "発信中は60秒ごとに最新のバッテリー残量でdmを更新します\n現在のdm: ${dmHex ?: "(不明)"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 } else {
                     OutlinedTextField(

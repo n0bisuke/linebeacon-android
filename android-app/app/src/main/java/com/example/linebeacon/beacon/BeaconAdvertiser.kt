@@ -94,6 +94,8 @@ class BeaconAdvertiser(context: Context) {
     private var advertiser: BluetoothLeAdvertiser? = null
     private var callback: AdvertisingSetCallback? = null
     private var startedFrameHex: String? = null
+    /** 現在稼働中のAdvertisingSet。動的dm更新(setAdvertisingData)に使う。 */
+    private var currentSet: AdvertisingSet? = null
 
     private val bluetoothStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -204,6 +206,7 @@ class BeaconAdvertiser(context: Context) {
             ) {
                 if (status == AdvertisingSetCallback.ADVERTISE_SUCCESS) {
                     advertiser = hwidAdvertiser
+                    currentSet = advertisingSet
                     _status.value = AdvertiseStatus.Advertising(
                         frameHex = startedFrameHex ?: "",
                         intervalMs = INTERVAL_MS.toInt(),
@@ -240,6 +243,34 @@ class BeaconAdvertiser(context: Context) {
         }
     }
 
+    /**
+     * 稼働中の広告データを差し替える(動的dm用)。フレームは開始時と同じlegacy
+     * 31バイト上限に収まる必要がある。稼働中でない場合や権限が失われた場合は
+     * false。成功時はUI表示に反映する。
+     */
+    fun updateAdvertisingData(frame: ByteArray): Boolean {
+        val set = currentSet ?: return false
+        val data = AdvertiseData.Builder()
+            .addServiceUuid(ParcelUuid(SimpleBeaconFrame.SERVICE_UUID))
+            .addServiceData(ParcelUuid(SimpleBeaconFrame.SERVICE_UUID), frame)
+            .build()
+        return try {
+            set.setAdvertisingData(data)
+            startedFrameHex = Hex.encode(frame)
+            val status = _status.value
+            if (status is AdvertiseStatus.Advertising) {
+                _status.value = status.copy(frameHex = startedFrameHex ?: status.frameHex)
+            }
+            true
+        } catch (e: SecurityException) {
+            false
+        } catch (e: IllegalArgumentException) {
+            false // サイズ超過など。開始時と同じ検証で弾かれているはずなので稀
+        } catch (e: IllegalStateException) {
+            false
+        }
+    }
+
     /** Stops the current advertising session (no-op when not running). */
     fun stop() {
         val adv = advertiser
@@ -271,6 +302,7 @@ class BeaconAdvertiser(context: Context) {
         advertiser = null
         callback = null
         startedFrameHex = null
+        currentSet = null
     }
 
     private fun errorCodeMessage(code: Int): String = when (code) {

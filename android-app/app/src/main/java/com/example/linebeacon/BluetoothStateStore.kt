@@ -22,7 +22,7 @@ class SettingsStore(context: Context) {
         get() = prefs.getString(KEY_DEVICE_MESSAGE, "").orEmpty()
         set(value) = prefs.edit().putString(KEY_DEVICE_MESSAGE, value).apply()
 
-    /** Device Message入力のモードがテキストだったかの記憶(HEX/テキスト切替)。 */
+    /** 旧バージョン用(テキストモードboolean)。互換のため残置、新規は[deviceMessageMode]。 */
     var deviceMessageTextMode: Boolean
         get() = prefs.getBoolean(KEY_DEVICE_MESSAGE_TEXT_MODE, false)
         set(value) = prefs.edit().putBoolean(KEY_DEVICE_MESSAGE_TEXT_MODE, value).apply()
@@ -32,15 +32,22 @@ class SettingsStore(context: Context) {
         get() = prefs.getString(KEY_DEVICE_MESSAGE_TEXT, "").orEmpty()
         set(value) = prefs.edit().putString(KEY_DEVICE_MESSAGE_TEXT, value).apply()
 
+    /** Device Messageのモード(HEX / テキスト / バッテリー自動)。旧設定はフォールバック。 */
+    var deviceMessageMode: String
+        get() = prefs.getString(KEY_DEVICE_MESSAGE_MODE, null)
+            ?: if (deviceMessageTextMode) MODE_TEXT else MODE_HEX
+        set(value) = prefs.edit().putString(KEY_DEVICE_MESSAGE_MODE, value).apply()
+
     /**
      * 発信に使う実効Device Message(大文字HEX)。テキストモード時は入力テキストの
-     * UTF-8 HEX変換結果を返す。変換不能(13バイト超過)ならnull。
+     * UTF-8 HEX変換結果を返す(変換不能=13バイト超過ならnull)。
+     * バッテリーモードは値が実行時に変わるため対象外(発信時に[BeaconController]が生成)。
      */
     fun effectiveDeviceMessage(): String? =
-        if (deviceMessageTextMode) {
-            SimpleBeaconFrame.deviceMessageHexFromText(deviceMessageText)
-        } else {
-            deviceMessage
+        when (deviceMessageMode) {
+            MODE_TEXT -> SimpleBeaconFrame.deviceMessageHexFromText(deviceMessageText)
+            MODE_BATTERY -> null
+            else -> deviceMessage
         }
 
     /** Loads the saved inputs as a [BeaconConfig] when they are still valid. */
@@ -53,5 +60,10 @@ class SettingsStore(context: Context) {
         private const val KEY_DEVICE_MESSAGE = "device_message"
         private const val KEY_DEVICE_MESSAGE_TEXT_MODE = "device_message_text_mode"
         private const val KEY_DEVICE_MESSAGE_TEXT = "device_message_text"
+        private const val KEY_DEVICE_MESSAGE_MODE = "device_message_mode"
+
+        const val MODE_HEX = "hex"
+        const val MODE_TEXT = "text"
+        const val MODE_BATTERY = "battery"
     }
 }

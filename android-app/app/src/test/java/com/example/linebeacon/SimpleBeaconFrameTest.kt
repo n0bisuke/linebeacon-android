@@ -134,6 +134,28 @@ class SimpleBeaconFrameTest {
     }
 
     @Test
+    fun `battery dm message`() {
+        // ASCII "B85" = 0x42 0x38 0x35
+        assertEquals("423835", SimpleBeaconFrame.batteryDeviceMessageHex(85))
+        assertEquals(SimpleBeaconFrame.BATTERY_DM_PREFIX + "85", "B85")
+        // 桁数は可変(1%..100%)
+        assertEquals("4231", SimpleBeaconFrame.batteryDeviceMessageHex(1)) // "B1"
+        assertEquals("42313030", SimpleBeaconFrame.batteryDeviceMessageHex(100)) // "B100"
+        // クランプ
+        assertEquals(SimpleBeaconFrame.batteryDeviceMessageHex(0), SimpleBeaconFrame.batteryDeviceMessageHex(-5))
+        assertEquals(SimpleBeaconFrame.batteryDeviceMessageHex(100), SimpleBeaconFrame.batteryDeviceMessageHex(120))
+        // 13バイト上限を大きく下回る
+        assertTrue(Hex.decode(SimpleBeaconFrame.batteryDeviceMessageHex(85))!!.size <= 13)
+
+        // フレームとして組める
+        val frame = SimpleBeaconFrame.buildFrame(
+            Hex.decode("32AF519E88")!!,
+            SimpleBeaconFrame.deviceMessageBytes(SimpleBeaconFrame.batteryDeviceMessageHex(85))!!,
+        )
+        assertEquals("0232AF519E887F423835", Hex.encode(frame))
+    }
+
+    @Test
     fun `config factory rejects invalid input`() {
         assertTrue(BeaconConfig.newInstance("12345", "").isFailure)
         assertTrue(BeaconConfig.newInstance("32AF519E88", "XYZ").isFailure)

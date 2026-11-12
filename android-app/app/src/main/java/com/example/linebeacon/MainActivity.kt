@@ -39,7 +39,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.linebeacon.beacon.AdvertiseStatus
@@ -63,6 +67,21 @@ class MainActivity : ComponentActivity() {
 private val OkGreen = Color(0xFF068C4A)
 private val WarnOrange = Color(0xFFB26A00)
 private val ErrRed = Color(0xFFB3261E)
+
+/**
+ * HWID入力欄のマスク表示(「HWIDをマスク表示」スイッチON時に適用)。
+ * 全体を伏字ではなく先頭2桁+末尾2桁を残すため、マスク部分は位置がずれない
+ * (`OffsetMapping.Identity`)。実際の入力・保存値は本物のHWIDのまま。
+ */
+private val HwidMaskVisualTransformation = VisualTransformation { text ->
+    val t = text.text
+    val masked = if (t.length > 4) {
+        t.take(2) + "•".repeat(t.length - 4) + t.takeLast(2)
+    } else {
+        t
+    }
+    TransformedText(AnnotatedString(masked), OffsetMapping.Identity)
+}
 
 @Composable
 fun BeaconScreen() {
@@ -183,8 +202,16 @@ fun BeaconScreen() {
                     },
                     label = { Text("HWID (10桁のHEX)") },
                     supportingText = {
-                        Text(hwidError ?: "LINE Official Account Managerで発行されたHWID")
+                        Text(
+                            hwidError ?: if (hwidMasked) {
+                                "LINE Official Account Managerで発行されたHWID(マスク表示中・スイッチで解除)"
+                            } else {
+                                "LINE Official Account Managerで発行されたHWID"
+                            }
+                        )
                     },
+                    visualTransformation =
+                        if (hwidMasked) HwidMaskVisualTransformation else VisualTransformation.None,
                     isError = hwidError != null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),

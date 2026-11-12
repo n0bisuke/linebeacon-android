@@ -55,6 +55,20 @@ cd /workspace/android-app
 ./gradlew test                    # 単体テスト(フレーム生成・HEX変換・入力検証)
 ```
 
+### GitHub Codespacesでビルドする場合
+
+リポジトリルートの `.devcontainer/` により、Codespaceを開くとAndroid SDK(licenses承認済み)とNode.jsがセットアップ済みになります:
+
+```bash
+cd android-app                    # gradleプロジェクトルート
+./gradlew assembleDebug           # ANDROID_HOMEはdevcontainerで設定済み
+./gradlew test
+```
+
+- **ビルド**: 上記のとおりOK。本家イメージはx86_64のためOrbStack arm64特有のAAPT2問題もなし
+- **実機 `adb install`**: Codespaceはクラウド上にありLAN外のため、端末の無線ADB(プライベートIP)には**直接届かない**。APKをファイル転送(Releases等)して端末側で直接インストールするか、LAN側マシンをTCPトンネルで中継させる
+- **linebot**: むしろCodespaces向き。Portパネルで **65135 を「Public」に変更**(認証付きURLはLINEのWebhook取得に失敗する)し、`https://<codespace名>-65135.app.github.dev/webhook` をWebhook URLに設定。Channel secret等はCodespacesのSecrets(`LINE_CHANNEL_SECRET` / `LINE_CHANNEL_ACCESS_TOKEN`)に登録すれば `cd linebot && npm start` で.env不要
+
 APK出力先: `app/build/outputs/apk/debug/app-debug.apk`(共有用コピーとして `dist/app-debug.apk` にも配置)
 
 > **OrbStack + arm64 環境の注意**: 共通イメージ `android-kotlin:latest` はarm64コンテナだが、AGPが同梱するAAPT2はx86_64バイナリのため、`AAPT2 ... Daemon startup failed` でビルドが失敗することがある。対処はOrbStackの[マルチアーチ手順](https://orb.cx/multiarch)に従い、実行するコンテナ内でx86_64向けglibc/ローダーを入れる(Ubuntuの場合):

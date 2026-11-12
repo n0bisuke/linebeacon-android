@@ -56,6 +56,10 @@ cd /workspace/android-app
 ./gradlew test                    # 単体テスト(フレーム生成・HEX変換・入力検証)
 ```
 
+### ローカルのDocker / VS Codeでビルドする場合
+
+GitHubのリポジトリをそのままcloneして試す場合は **[docs/LOCAL-CONTAINER.md](../docs/LOCAL-CONTAINER.md)**(devcontainerで完全セルフコンテインド、実機への無線ADB接続も可)を参照。
+
 ### GitHub Codespacesでビルドする場合
 
 リポジトリルートの `.devcontainer/` により、Codespaceを開くとAndroid SDK(licenses承認済み)とNode.jsがセットアップ済みになります。**Codespacesでの一連の手順(ビルド→APK取得→linebot公開→Webhook設定)は [docs/CODESPACES.md](../docs/CODESPACES.md) にまとめてあります**:

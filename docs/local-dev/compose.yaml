@@ -1,0 +1,28 @@
+# 外部clone者向けのローカル開発用compose(リポジトリルートの compose.yaml は
+# 共通リポジトリ shared-dev-environments を参照する内部テンプレート用なので編集しない)。
+#
+#   リポジトリルートから:
+#   docker compose -f docs/local-dev/compose.yaml run --rm android-local
+#
+# volumeの相対パスはこのファイル基準(../.. = リポジトリルート)。
+name: linebeacon-local
+
+services:
+  android-local:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    volumes:
+      - ../..:/workspace
+      - project-gradle:/workspace/android-app/.gradle
+      - project-root-build:/workspace/android-app/build
+      - project-app-build:/workspace/android-app/app/build
+      - gradle-cache:/root/.gradle
+    working_dir: /workspace/android-app
+
+volumes:
+  project-gradle:
+  project-root-build:
+  project-app-build:
+  gradle-cache:

@@ -39,7 +39,15 @@ class BeaconController(context: Context) {
      * Returns a human readable error message, or null on success.
      */
     fun startAdvertising(): String? {
-        val config = BeaconConfig.newInstance(settings.hwid, settings.deviceMessage)
+        // テキストモード時は入力テキストをUTF-8 HEXに変換した値を発信に使う(HEXモードでは
+        // 保存値そのもの)。UIとサービスのどちらから起動しても同じdmになる
+        val deviceMessageHex = settings.effectiveDeviceMessage()
+            ?: run {
+                val error = "テキストモードのDevice MessageがUTF-8で13バイトを超えています(日本語は最大4文字)"
+                log("設定エラー: $error")
+                return error
+            }
+        val config = BeaconConfig.newInstance(settings.hwid, deviceMessageHex)
             .getOrElse { error ->
                 log("設定エラー: ${error.message}")
                 return error.message

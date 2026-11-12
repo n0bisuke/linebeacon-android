@@ -98,15 +98,13 @@ function describeBeaconEvent(event) {
   ].join('\n');
 }
 
-/** ビーコン検知をLINEのトークに返信 (トークン未設定なら何もしない)。 */
-function replyBeacon(event) {
+/** 指定テキストをreplyToken宛てに返信する(トークン未設定なら何もしない)。 */
+function replyText(replyToken, text) {
   if (!CHANNEL_ACCESS_TOKEN) return;
-  const replyToken = event.replyToken;
   if (!replyToken || replyToken === '00000000000000000000000000000000') return; // 検証用ダミー
-  const b = event.beacon || {};
   const body = JSON.stringify({
     replyToken,
-    messages: [{ type: 'text', text: `📡 ビーコン検知!\nイベント: ${b.type}\nHWID: ${b.hwid||'?'}\ndm: ${formatDm(b.dm)}` }],
+    messages: [{ type: 'text', text }],
   });
   const req = https.request(
     {
@@ -179,7 +177,15 @@ const server = http.createServer((req, res) => {
       for (const event of payload.events || []) {
         if (event.type === 'beacon') {
           console.log(describeBeaconEvent(event));
-          replyBeacon(event);
+          const b = event.beacon || {};
+          replyText(
+            event.replyToken,
+            `📡 ビーコン検知!\nイベント: ${b.type}\nHWID: ${b.hwid||'?'}\ndm: ${formatDm(b.dm)}`,
+          );
+        } else if (event.type === 'message' && event.message && event.message.type === 'text') {
+          // オウム返し: 届いたテキストをそのまま返す(LINE bot動作確認用)
+          console.log(`[message] オウム返し: ${event.message.text}`);
+          replyText(event.replyToken, event.message.text);
         } else {
           console.log(`[webhook] 他イベント: type=${event.type}`);
         }

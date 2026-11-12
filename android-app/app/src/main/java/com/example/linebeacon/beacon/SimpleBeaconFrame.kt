@@ -107,4 +107,31 @@ object SimpleBeaconFrame {
             "Device Messageは最大${DEVICE_MESSAGE_MAX_BYTES}バイト(${DEVICE_MESSAGE_MAX_HEX_LENGTH}桁)までです"
         else -> null
     }
+
+    /**
+     * Converts plain text (e.g. Japanese) into the Device Message HEX by
+     * UTF-8 encoding. Returns null when the text does not fit into the
+     * 13-byte limit (Japanese characters are 3 bytes each, so at most 4).
+     * An empty string maps to an empty HEX (a single 0x00 is sent).
+     */
+    fun deviceMessageHexFromText(text: String): String? {
+        val bytes = text.toByteArray(Charsets.UTF_8)
+        if (bytes.size > DEVICE_MESSAGE_MAX_BYTES) return null
+        return bytes.joinToString("") { "%02X".format(it) }
+    }
+
+    /**
+     * Decodes Device Message HEX into displayable text. Returns null when the
+     * bytes are not a lossless UTF-8 round-trip or contain control characters
+     * (i.e. the payload is binary and is better shown as HEX).
+     */
+    fun textFromDeviceMessageHex(deviceMessageHex: String): String? {
+        val bytes = Hex.decode(deviceMessageHex) ?: return null
+        if (bytes.isEmpty()) return null
+        val text = String(bytes, Charsets.UTF_8)
+        val lossless = text.toByteArray(Charsets.UTF_8).contentEquals(bytes) &&
+            !text.contains('�') &&
+            text.none { it.code < 0x20 }
+        return if (lossless) text else null
+    }
 }

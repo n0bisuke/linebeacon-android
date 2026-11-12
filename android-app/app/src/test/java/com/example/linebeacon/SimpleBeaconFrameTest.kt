@@ -114,6 +114,26 @@ class SimpleBeaconFrameTest {
     }
 
     @Test
+    fun `text to device message hex conversion`() {
+        // 日本語1文字=3バイトUTF-8。「おはよう」= 12バイトで収まる
+        assertEquals("E3818AE381AFE38288E38186", SimpleBeaconFrame.deviceMessageHexFromText("おはよう"))
+        assertEquals("", SimpleBeaconFrame.deviceMessageHexFromText("")) // 空欄可(0x00になる)
+        // 5文字=15バイトは上限超過でnull。ASCIIは1バイト/文字
+        assertNull(SimpleBeaconFrame.deviceMessageHexFromText("こんにちは"))
+        assertNull(SimpleBeaconFrame.deviceMessageHexFromText("12345678901234")) // 14バイト
+        assertEquals("414243", SimpleBeaconFrame.deviceMessageHexFromText("ABC"))
+    }
+
+    @Test
+    fun `device message hex to text conversion`() {
+        assertEquals("おはよう", SimpleBeaconFrame.textFromDeviceMessageHex("E3818AE381AFE38288E38186"))
+        assertNull(SimpleBeaconFrame.textFromDeviceMessageHex("")) // 空
+        assertNull(SimpleBeaconFrame.textFromDeviceMessageHex("DEADBF")) // 完全なUTF-8ではない
+        assertNull(SimpleBeaconFrame.textFromDeviceMessageHex("0232af519e887f")) // 制御文字を含む
+        assertNull(SimpleBeaconFrame.textFromDeviceMessageHex("GG")) // 非HEX
+    }
+
+    @Test
     fun `config factory rejects invalid input`() {
         assertTrue(BeaconConfig.newInstance("12345", "").isFailure)
         assertTrue(BeaconConfig.newInstance("32AF519E88", "XYZ").isFailure)

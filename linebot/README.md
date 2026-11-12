@@ -7,6 +7,7 @@ Androidビーコン発信側の検証用に、Messaging APIのWebhookを受信�
 - `type: "beacon"` イベント(enter / broadcast / exit)を受信して**見やすいログで表示**(HWID / dm / 検知元)
 - Channel secretによる**署名検証**(`x-line-signature`)
 - `LINE_CHANNEL_ACCESS_TOKEN` を設定すると、**検知をLINEのトークに返信**(`📡 ビーコン検知!` メッセージ)
+- トークン設定時に受け取った**テキストメッセージにはオウム返し**で返信(botの疎通確認用)
 
 ## セットアップ
 

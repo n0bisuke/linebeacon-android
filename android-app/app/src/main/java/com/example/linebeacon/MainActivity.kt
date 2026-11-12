@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -69,16 +70,32 @@ fun BeaconScreen() {
 
     var hwid by remember { mutableStateOf(controller.settings.hwid) }
     var deviceMessage by remember { mutableStateOf(controller.settings.deviceMessage) }
+    var dmTextMode by remember { mutableStateOf(controller.settings.deviceMessageTextMode) }
+    var dmText by remember { mutableStateOf(controller.settings.deviceMessageText) }
 
     val status by controller.advertiser.status.collectAsState()
     val caps by controller.advertiser.capabilities.collectAsState()
     val logs by controller.logs.collectAsState()
 
     val hwidError = remember(hwid) { SimpleBeaconFrame.hwidError(hwid) }
-    val dmError = remember(deviceMessage) { SimpleBeaconFrame.deviceMessageError(deviceMessage) }
-    val config = remember(hwid, deviceMessage) {
-        BeaconConfig.newInstance(hwid, deviceMessage).getOrNull()
+
+    // テキストモードでは入力テキストをUTF-8 HEXに自動変換してHEXモードと同じ検証に渡す。
+    // 変換結果はそのまま発信フレームのDevice Messageになる。
+    val dmHex = if (dmTextMode) {
+        SimpleBeaconFrame.deviceMessageHexFromText(dmText) // null: 13バイト超過
+    } else {
+        deviceMessage
     }
+    val dmError: String? = if (dmTextMode) {
+        if (dmHex == null) {
+            "テキストはUTF-8で${SimpleBeaconFrame.DEVICE_MESSAGE_MAX_BYTES}バイト以内にしてください(日本語は最大4文字)"
+        } else {
+            null
+        }
+    } else {
+        SimpleBeaconFrame.deviceMessageError(deviceMessage)
+    }
+    val config = dmHex?.let { BeaconConfig.newInstance(hwid, it).getOrNull() }
 
     fun has(permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
@@ -165,24 +182,76 @@ fun BeaconScreen() {
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
-                    value = deviceMessage,
-                    onValueChange = {
-                        deviceMessage = it
-                        controller.settings.deviceMessage = it
-                    },
-                    label = { Text("Device Message (最大26桁のHEX、空欄可)") },
-                    supportingText = {
-                        Text(
-                            dmError
-                                ?: if (deviceMessage.isBlank()) "空欄の場合は0x00を送信します"
-                                else "Webhookのdmフィールドに入る値"
-                        )
-                    },
-                    isError = dmError != null,
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                // Device Messageの入力モード切替(HEX / テキスト)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !dmTextMode,
+                        onClick = {
+                            // テキスト→HEX: 変換できる場合は結果をHEX欄に引き継ぐ
+                            SimpleBeaconFrame.deviceMessageHexFromText(dmText)?.let { deviceMessage = it }
+                            dmTextMode = false
+                            controller.settings.deviceMessageTextMode = false
+                        },
+                        label = { Text("HEXで入力") },
+                    )
+                    FilterChip(
+                        selected = dmTextMode,
+                        onClick = {
+                            // HEX→テキスト: 復元できる場合はテキスト欄に引き継ぐ
+                            SimpleBeaconFrame.textFromDeviceMessageHex(deviceMessage)?.let { dmText = it }
+                            dmTextMode = true
+                            controller.settings.deviceMessageTextMode = true
+                        },
+                        label = { Text("テキストで入力") },
+                    )
+                }
+                if (dmTextMode) {
+                    OutlinedTextField(
+                        value = dmText,
+                        onValueChange = {
+                            dmText = it
+                            controller.settings.deviceMessageText = it
+                            // 有効なテキストはHEXに変換して発信設定へ反映する
+                            SimpleBeaconFrame.deviceMessageHexFromText(it)?.let { hex ->
+                                controller.settings.deviceMessage = hex
+                            }
+                        },
+                        label = { Text("Device Message (テキスト)") },
+                        supportingText = {
+                            Text(
+                                dmError ?: if (dmText.isBlank()) {
+                                    "空欄の場合は0x00を送信します"
+                                } else {
+                                    "→ 0x${dmHex} (UTF-8 ${dmText.toByteArray(Charsets.UTF_8).size}バイト)"
+                                }
+                            )
+                        },
+                        isError = dmError != null,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                } else {
+                    OutlinedTextField(
+                        value = deviceMessage,
+                        onValueChange = {
+                            deviceMessage = it
+                            controller.settings.deviceMessage = it
+                        },
+                        label = { Text("Device Message (最大26桁のHEX、空欄可)") },
+                        supportingText = {
+                            val decoded = SimpleBeaconFrame.textFromDeviceMessageHex(deviceMessage)
+                            Text(
+                                dmError
+                                    ?: if (deviceMessage.isBlank()) "空欄の場合は0x00を送信します"
+                                    else "Webhookのdmフィールドに入る値" +
+                                        (decoded?.let { " (テキスト: $it)" } ?: "")
+                            )
+                        },
+                        isError = dmError != null,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 config?.let {
                     Text(
                         "Service Data (UUID 0xFE6F): 0x6FFE ${it.frameHex}",

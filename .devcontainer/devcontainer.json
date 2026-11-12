@@ -2,7 +2,7 @@
   "name": "linebeacon-android",
   "image": "mcr.microsoft.com/devcontainers/java:1-17-bookworm",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "lts" }
+    "ghcr.io/devcontainers/features/node:2.1.2": { "version": "lts" }
   },
   // linebotの待受ポートを公開。Codespacesの認証付きURLはLINEのWebhook取得が
   // できないため、PortパネルでPort Visibilityを「Public」に変更すること

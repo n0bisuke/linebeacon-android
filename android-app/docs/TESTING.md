@@ -27,7 +27,7 @@
 ## ステップ3: Webhookでの受信確認(Messaging API)
 
 1. LINE Developers Consoleで Messaging APIチャネルを作成し、Webhook URLを設定して「Webhookの利用」をオン
-2. 受信サーバーを用意しない場合、手軽な確認手段は [webhook.site](https://webhook.site) — 発行URLをWebhook URLに設定すれば、届くJSONをブラウザでそのまま確認できる
+2. 受信サーバーは同梱の **[linebot](../../linebot/README.md)**(Node.js・依存なし)を使うのが手軽。ビーコンイベントをログ表示し、トークンを設定すればLINEのトークに返信もできる。それ以外は [webhook.site](https://webhook.site) でも可
 3. 再度受信側端末を近づけ、`type: "beacon"`, `beacon.type: "enter"`, `beacon.hwid`, `beacon.dm` を含むイベントが届くことを確認
 
 ## 注意

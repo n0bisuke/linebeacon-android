@@ -17,7 +17,7 @@ Androidビーコン発信側の検証用に、Messaging APIのWebhookを受信�
 ```bash
 cd linebot
 cp .env.example .env          # LINE_CHANNEL_SECRET を貼る(.envはコミットしない)
-node server.js                # 既定: http://localhost:3000/webhook
+node server.js                # 既定: http://localhost:65135/webhook (npm startでも可)
 ```
 
 ## HTTPS公開について
@@ -25,7 +25,7 @@ node server.js                # 既定: http://localhost:3000/webhook
 LINEのWebhookは**公開されたHTTPS URL**が必須のため、ローカル実行のままでは届きません。開発中の確認はトンネルを使うのが手軽:
 
 ```bash
-npx ngrok http 3000           # 例: https://xxxx.ngrok-free.app
+npx ngrok http 65135          # 例: https://xxxx.ngrok-free.app
 ```
 
 発行されたURLの末尾に `/webhook` を付けたものをWebhook URLに設定。設定後、Consoleの「検証」ボタンで `200` が返ることを確認し、ビーコン発信側スマホを受信側端末の近くに置くと、このサーバーに検知ログが出ます。

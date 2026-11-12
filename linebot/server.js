@@ -11,7 +11,7 @@
  * 設定は server/.env または環境変数で渡す(トークン類はコードに書かないこと):
  *   LINE_CHANNEL_SECRET        Messaging APIチャネルのChannel secret(署名検証)
  *   LINE_CHANNEL_ACCESS_TOKEN  (任意) 返信メッセージ送信用
- *   PORT / WEBHOOK_PATH        (任意) 既定は 3000 / /webhook
+ *   PORT / WEBHOOK_PATH        (任意) 既定は 65135 / /webhook
  */
 
 const http = require('http');
@@ -22,7 +22,8 @@ const path = require('path');
 
 loadDotEnv(path.join(__dirname, '.env'));
 
-const PORT = Number(process.env.PORT || '3000');
+// 既定ポートは 0xFE6F (Service UUID値) = 65135。3000は衝突しやすいので使わない。
+const PORT = Number(process.env.PORT || '65135');
 const WEBHOOK_PATH = process.env.WEBHOOK_PATH || '/webhook';
 const CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || '';
 const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';

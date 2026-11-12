@@ -60,9 +60,27 @@ function verifySignature(rawBody, signatureHeader) {
 
 // ---- beaconイベントの整形ログ ----
 
+/**
+ * dmのHEXを表示用に整形する。UTF-8テキストとして安全に復元できる場合のみ
+ * 解釈結果を併記する (例: "0x584f4f41 (= ほげ)"). バイナリならHEXのまま。
+ */
+function formatDm(dm) {
+  if (dm === undefined) return '(なし)';
+  const bytes = Buffer.from(dm, 'hex');
+  if (bytes.length === 0 || bytes.toString('hex') !== dm.toLowerCase()) {
+    return `0x${dm}`; // HEXとして解釈できない/空の入力はそのまま
+  }
+  const text = bytes.toString('utf8');
+  const lossless =
+    Buffer.from(text, 'utf8').equals(bytes) &&
+    !text.includes('�') &&
+    !/[\u0000-\u001f]/.test(text);
+  return lossless ? `0x${dm}(= "${text}")` : `0x${dm}`;
+}
+
 function describeBeaconEvent(event) {
   const b = event.beacon || {};
-  const dm = b.dm === undefined ? '(なし)' : `0x${b.dm}`;
+  const dm = formatDm(b.dm);
   const when = new Date().toLocaleString('ja-JP', { hour12: false });
   const who =
     event.source && event.source.userId
@@ -88,7 +106,7 @@ function replyBeacon(event) {
   const b = event.beacon || {};
   const body = JSON.stringify({
     replyToken,
-    messages: [{ type: 'text', text: `📡 ビーコン検知!\nイベント: ${b.type}\nHWID: ${b.hwid||'?'}\ndm: ${b.dm || '(なし)'}` }],
+    messages: [{ type: 'text', text: `📡 ビーコン検知!\nイベント: ${b.type}\nHWID: ${b.hwid||'?'}\ndm: ${formatDm(b.dm)}` }],
   });
   const req = https.request(
     {

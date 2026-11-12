@@ -1,0 +1,121 @@
+package com.example.linebeacon.beacon
+
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class SimpleBeaconFrameTest {
+
+    /**
+     * Spec example (https://github.com/line/line-simple-beacon README.en.md):
+     * HWID = 32AF519E88, Device Message = 0032006900FAFFFF000199FF88 (13 bytes)
+     *
+     *   0x02 | 32 AF 51 9E 88 | 0x7F | 00 32 00 69 00 FA FF FF 00 01 99 FF 88
+     */
+    @Test
+    fun `builds the spec example frame`() {
+        val hwid = Hex.decode("32AF519E88")!!
+        val dm = Hex.decode("00 32 00 69 00 FA FF FF 00 01 99 FF 88")!!
+        assertEquals(13, dm.size)
+
+        val frame = SimpleBeaconFrame.buildFrame(hwid, dm)
+
+        assertEquals(SimpleBeaconFrame.FRAME_MAX_BYTES, frame.size)
+        assertArrayEquals(
+            byteArrayOf(
+                0x02, // Frame Type = LINE Beacon
+                0x32.toByte(), 0xAF.toByte(), 0x51.toByte(), 0x9E.toByte(), 0x88.toByte(), // HWID
+                0x7F.toByte(), // Measured TxPower
+                0x00, 0x32.toByte(), 0x00, 0x69.toByte(), 0x00, // Device Message...
+                0xFA.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0x00, 0x01, 0x99.toByte(), 0xFF.toByte(), 0x88.toByte(),
+            ),
+            frame,
+        )
+    }
+
+    @Test
+    fun `empty device message becomes a single 0x00 byte`() {
+        val hwid = Hex.decode("32AF519E88")!!
+        val dm = SimpleBeaconFrame.deviceMessageBytes("")!!
+        assertArrayEquals(byteArrayOf(0x00), dm)
+
+        val frame = SimpleBeaconFrame.buildFrame(hwid, dm)
+        assertEquals(SimpleBeaconFrame.FRAME_MIN_BYTES, frame.size)
+        assertEquals("0232AF519E887F00", Hex.encode(frame))
+    }
+
+    @Test
+    fun `frame with one byte device message is 8 bytes`() {
+        val frame = SimpleBeaconFrame.buildFrame(Hex.decode("0000000000")!!, byteArrayOf(0x01))
+        assertEquals(8, frame.size)
+        assertEquals("0200000000007F01", Hex.encode(frame))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `rejects hwid with wrong size`() {
+        SimpleBeaconFrame.buildFrame(Hex.decode("32AF519E")!!, byteArrayOf(0x00))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `rejects device message longer than 13 bytes`() {
+        SimpleBeaconFrame.buildFrame(
+            Hex.decode("32AF519E88")!!,
+            Hex.decode("000000000000000000000000000000")!!, // 15 bytes
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `rejects empty device message array`() {
+        SimpleBeaconFrame.buildFrame(Hex.decode("32AF519E88")!!, ByteArray(0))
+    }
+
+    @Test
+    fun `constants match the official spec`() {
+        assertEquals(0xFE6F, SimpleBeaconFrame.SERVICE_UUID_16BIT)
+        assertEquals("0000fe6f-0000-1000-8000-00805f9b34fb", SimpleBeaconFrame.SERVICE_UUID.toString())
+        assertEquals(0x02, SimpleBeaconFrame.FRAME_TYPE)
+        assertEquals(0x7F, SimpleBeaconFrame.MEASURED_TX_POWER)
+        assertEquals(5, SimpleBeaconFrame.HWID_BYTES)
+        assertEquals(13, SimpleBeaconFrame.DEVICE_MESSAGE_MAX_BYTES)
+        assertEquals(8, SimpleBeaconFrame.FRAME_MIN_BYTES)
+        assertEquals(20, SimpleBeaconFrame.FRAME_MAX_BYTES)
+    }
+
+    // ---- 入力検証 ----
+
+    @Test
+    fun `hwid validation`() {
+        assertNull(SimpleBeaconFrame.hwidError("32AF519E88"))
+        assertNull(SimpleBeaconFrame.hwidError("32af519e88"))
+        assertNotNull(SimpleBeaconFrame.hwidError("")) // 空
+        assertNotNull(SimpleBeaconFrame.hwidError("32AF519E8")) // 9桁
+        assertNotNull(SimpleBeaconFrame.hwidError("32AF519E8800")) // 12桁
+        assertNotNull(SimpleBeaconFrame.hwidError("32AF519E8Z")) // 非HEX
+    }
+
+    @Test
+    fun `device message validation`() {
+        assertNull(SimpleBeaconFrame.deviceMessageError("")) // 空欄は許可
+        assertNull(SimpleBeaconFrame.deviceMessageError("0011998877665544332211"))
+        assertNull(SimpleBeaconFrame.deviceMessageError("00112233445566778899AABBCC")) // 13バイト
+        assertNotNull(SimpleBeaconFrame.deviceMessageError("00112233445566778899AABBCCDD")) // 14バイト
+        assertNotNull(SimpleBeaconFrame.deviceMessageError("GG")) // 非HEX
+    }
+
+    @Test
+    fun `config factory accepts valid input and stores normalized values`() {
+        val config = BeaconConfig.newInstance("32af519e88", "00 11").getOrThrow()
+        assertEquals("32AF519E88", config.hwidHex)
+        assertEquals("0011", config.deviceMessageHex)
+        assertEquals("0232AF519E887F0011", config.frameHex)
+    }
+
+    @Test
+    fun `config factory rejects invalid input`() {
+        assertTrue(BeaconConfig.newInstance("12345", "").isFailure)
+        assertTrue(BeaconConfig.newInstance("32AF519E88", "XYZ").isFailure)
+    }
+}

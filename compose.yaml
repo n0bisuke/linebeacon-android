@@ -1,0 +1,28 @@
+name: linebeacon-android   # Composeプロジェクト名。他プロジェクトと重複させない(Volume名の接頭辞になる)
+
+services:
+  android:
+    extends:
+      file: ${SHARED_DEV_ENV_DIR:-../../shared-dev-environments}/android/service.yaml
+      service: android
+    # .env があればコンテナに環境変数として渡す(Ollama設定など)
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      # extends 元の共通Volume(gradle-cache / claude-config)に追記される
+      - .:/workspace
+      - project-gradle:/workspace/android-app/.gradle
+      - root-build:/workspace/android-app/build
+      - app-build:/workspace/android-app/app/build
+
+volumes:
+  # 全プロジェクト共通(name固定)
+  gradle-cache:
+    name: android-gradle-cache
+  claude-config:
+    name: android-claude-config
+  # プロジェクト専用(linebeacon-android_ が自動で付く)
+  project-gradle:
+  root-build:
+  app-build:

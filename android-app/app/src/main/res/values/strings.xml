@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">LINE Beacon Transmitter</string>
+    <string name="notif_channel">ビーコン発信</string>
+    <string name="notif_title">LINE Simple Beaconを発信中</string>
+    <string name="notif_text">タップしてアプリを開く</string>
+    <string name="notif_stop">停止</string>
+</resources>

@@ -1,0 +1,10 @@
+.DS_Store
+.env
+build/
+.gradle/
+*.iml
+local.properties
+.idea/
+*.apk
+*.aab
+.kotlin/

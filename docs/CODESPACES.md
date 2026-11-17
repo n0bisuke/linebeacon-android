@@ -9,6 +9,18 @@
 2. **Code → Codespaces タブ → Create codespace on main**
 3. 初回は `.devcontainer/setup-android-sdk.sh` が走り、SDKのダウンロードに数分かかる(以降は再起動してもキャッシュで速い)
 4. 「SDK未インストール…」と出た場合はCodespaceを一度Reload/再起動すると解消することがある
+5. **`JAVA_HOME is set to an invalid directory: /usr/lib/jvm/msopenjdk-current` と出たらdevcontainerが適用されていない**(GitHub既定イメージのCodespaceになっている)。下記で手動導入も可能だが、**Codespaceの作り直しが確実**:
+
+   ```bash
+   # 手動導入する場合(devcontainer無しイメージでの応急処置)
+   sudo apt-get update -y && sudo apt-get install -y openjdk-17-jdk-headless
+   export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+   # リポジトリルートでAndroid SDK導入
+   bash .devcontainer/setup-android-sdk.sh
+   export ANDROID_HOME=$HOME/android-sdk
+   export PATH="$ANDROID_HOME/platform-tools:$PATH"
+   # (シェル再起動後も使いたい場合は上記exportを ~/.bashrc に追記)
+   ```
 
 ## 2. Androidアプリをビルドする
 

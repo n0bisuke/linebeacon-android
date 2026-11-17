@@ -4,9 +4,9 @@ Android (Kotlin / Gradle) 開発プロジェクト。Dockerイメージは共通
 
 ## 前提
 - `shared-dev-environments` を `../../shared-dev-environments` に配置する(別の場所なら `SHARED_DEV_ENV_DIR` に絶対パスを指定)。
-- 共通イメージ `android-kotlin:latest` をビルド済みにする(`docker image ls android-kotlin` で確認。`pull access denied` と出たらこれが未実施):
-  `cd shared-dev-environments && npm run build:android`
-- 使うDockerのコンテキストでビルドすること(`docker context ls` の `*` 付きが現在のもの。OrbStack/Docker Desktopでイメージは別)
+- 共通イメージ `android-kotlin:latest` は、どれかのプロジェクトで初めて `docker compose run` したときに自動でビルドされる(数分。以降は全プロジェクトで再利用)。
+  共通リポジトリの Dockerfile を変えたときは `cd shared-dev-environments && npm run build:android` で作り直す。
+- イメージは Docker のコンテキストごとに別(`docker context ls` の `*` 付きが現在のもの。OrbStack と Docker Desktop で共有されない)
 
 ## 使い方
 ```bash

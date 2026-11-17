@@ -8,3 +8,4 @@ local.properties
 *.apk
 *.aab
 .kotlin/
+node_modules/

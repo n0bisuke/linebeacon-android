@@ -33,15 +33,15 @@ mkdir -p dist && cp app/build/outputs/apk/debug/app-debug.apk dist/app-debug.apk
 
 ## 3. linebot(Webhookサーバー)を起動する
 
-### トークン類の用意(2択)
+### トークン類の用意
 
-- **Codespaces Secrets**: リポジトリ設定 → Codespaces → Repository secrets に `LINE_CHANNEL_SECRET`(必須)と `LINE_CHANNEL_ACCESS_TOKEN`(返信・オウム返ししたい場合)を登録。サーバー起動時に読まれる
-- **.env ファイル**: Codespace内の `linebot/.env` に作成(`cp .env.example .env`して編集)。`.env` はgitignore済みなのでコミットされない
+Codespace内の `linebot/.env` に設定を書く(`cp .env.example .env` して編集)。`.env` はgitignore済みなのでコミットされない。**`npm start` は `--env-file=.env` で読み込むため`.env`の作成が必須**(Codespaces Secretsの環境変数を使う場合は `npm start` ではなく `node server.js` を直接実行)。
 
 ### 起動とポート公開
 
 ```bash
 cd linebot
+npm install                      # obnizパッケージ(初回のみ)
 npm start                        # :65135 で待受(0xFE6F)
 ```
 

@@ -2,9 +2,17 @@
   "name": "linebot",
   "version": "1.0.0",
   "private": true,
-  "description": "LINE Simple Beacon確認用Webhookサーバー(依存ライブラリなし)",
+  "description": "LINE Simple Beacon確認用Webhookサーバーとobniz発信機",
   "main": "server.js",
+  "type": "module",
+  "engines": {
+    "node": ">=20.6.0"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node --env-file=.env server.js",
+    "start:obniz": "node --env-file=.env obniz-server.js"
+  },
+  "dependencies": {
+    "obniz": "^4.1.0"
   }
 }

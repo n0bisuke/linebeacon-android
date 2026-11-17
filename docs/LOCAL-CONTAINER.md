@@ -87,7 +87,7 @@ adb install dist/app-debug.apk
 
 ## 方法2: VS Code Dev Containers
 
-GUI好みなら **Dev Containers** 拡張でも同じことができる(中身は `.devcontainer/`):
+GUI好みなら **Dev Containers** 拡張でも同じことができる(中身は `.devcontainer/`)。**方法1と同じくDockerが前提**(Codespacesと違いDockerは手元のマシンで動く。Dockerが無いならCodespacesか方法0):
 
 1. `code linebeacon-android` でVS Codeを開く(**ルート**を開くこと。`android-app/` を直接開かない)
 2. 右下の **「Reopen in Container」** をクリック

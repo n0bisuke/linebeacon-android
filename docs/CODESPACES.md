@@ -39,8 +39,11 @@ Codespace内の `linebot/.env` に設定を書く(`cp .env.example .env` して�
 
 ### 起動とポート公開
 
+**Node.js >= 20.6 が必要**(`package.json` の `engines` 参照)。devcontainerのnode featureはLTSを入れるため通常は条件を満たす:
+
 ```bash
 cd linebot
+node -v                          # v20.6.0 以降であること
 npm install                      # obnizパッケージ(初回のみ)
 npm start                        # :65135 で待受(0xFE6F)
 ```
@@ -48,6 +51,10 @@ npm start                        # :65135 で待受(0xFE6F)
 1. VS Code下部の**Portsパネル**に `linebot webhook server` (65135) が出る
 2. その行の **Visibility を「Public」に変更** ← 認証付き(Private)URLはLINEサーバーが取得できないためここが必須
 3. 発行されたURLをコピー(URL欄のアイコンから)。`https://<codespace名>-65135.app.github.dev/webhook` の形
+
+### obnizを発信機にする場合(任意)
+
+obniz-server.jsは Codespaceでも動きます(obnizクラウドへの接続が外向きで通るため)。`.env` に加えて `OBNIZ_ID` と `LINE_BEACON_HWID`、そして**必須の** `LINE_CHANNEL_ACCESS_TOKEN` を設定し `npm run start:obniz`。Webhookのポート公開・URL設定は手順は同じ。発信は実物のobnizが行うため、obniz本体がオンラインであること、受信側のLINE端末がobnizの近くにあることが必要です。
 
 ### LINE Developers Consoleへ設定
 
@@ -57,7 +64,7 @@ npm start                        # :65135 で待受(0xFE6F)
 
 ## 4. 動作確認
 
-1. 実機アプリで「発信開始」し、LINEが入っている受信側端末を近くに置く(同一HWIDが公式アカウントに登録済みのこと)
+1. 実機アプリで「発信開始」(または obnizで `npm run start:obniz`)し、LINEが入っている受信側端末を近くに置く(同一HWIDが公式アカウントに登録済みのこと)
 2. linebotのターミナルに `📡 ビーコン検知!` のログが出る(HWIDは既定でマスク表示、`MASK_HWID=0` で解除)
 3. アクセストークンを設定していれば、検知元ユーザーのトークに返信が届く
 4. トークで `apk` と送ると、APKダウンロードURL(`https://<codespace名>-65135.app.github.dev/apk`)が返ってくる

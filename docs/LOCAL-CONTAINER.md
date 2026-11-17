@@ -74,6 +74,7 @@ docker compose -f docs/local-dev/compose.yaml run --rm android-local
 # APK: app/build/outputs/apk/debug/app-debug.apk
 ```
 
+- Windows(Docker Desktop/WSL2)でもそのまま使える。**USBデバッグしたい場合は方法0(ホスト直)の方が簡単**で、コンテナ内adbは無線ADBのみ
 - `linebot` も同じコンテナで動く(Node.js同梱): `cd ../linebot && npm start`
 - **実機への接続**: コンテナはホストと同一LANにいるため、端末の**無線ADB**に接続できる
 

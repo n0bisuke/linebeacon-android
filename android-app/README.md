@@ -56,9 +56,9 @@ cd /workspace/android-app
 ./gradlew test                    # 単体テスト(フレーム生成・HEX変換・入力検証)
 ```
 
-### ローカルのDocker / VS Codeでビルドする場合
+### ローカル(Mac/Windowsホスト直 or Docker)でビルドする場合
 
-GitHubのリポジトリをそのままcloneして試す場合は **[docs/LOCAL-CONTAINER.md](../docs/LOCAL-CONTAINER.md)**(devcontainerで完全セルフコンテインド、実機への無線ADB接続も可)を参照。
+GitHubのリポジトリをそのままcloneして試す場合は **[docs/LOCAL-CONTAINER.md](../docs/LOCAL-CONTAINER.md)** を参照。**Dockerなし**のホスト直ビルド(JDK 17 + Android Studio or CLIのSDK)か、devcontainerで完全セルフコンテインド、の2ルート。実機への無線ADB接続の手順もあり。
 
 ### GitHub Codespacesでビルドする場合
 

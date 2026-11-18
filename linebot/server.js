@@ -52,7 +52,34 @@ const APK_FILE =
 
 const APK_PATH = process.env.APK_PATH || "/apk";
 
+// 明示的に外部公開URLを指定したいときはこちら(未設定ならヘッダから推測)
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || "";
+
 const MAX_BODY_BYTES = 1024 * 1024;
+
+/**
+ * 外部公開URLのスキーム+ホストを組み立てる。
+ * ngrok等のトンネル・リバースプロキシはHostヘッダをlocalhostに書き替えるため、
+ * X-Forwarded-Host / X-Forwarded-Proto を優先する。
+ */
+const publicBaseUrl = (req) => {
+  if (PUBLIC_BASE_URL) {
+    return PUBLIC_BASE_URL.replace(/\/$/, "");
+  }
+
+  const headers = req.headers;
+  const forwardedHost =
+    typeof headers["x-forwarded-host"] === "string"
+      ? headers["x-forwarded-host"].split(",")[0].trim()
+      : "";
+  const host = forwardedHost || headers.host || `localhost:${PORT}`;
+  const forwardedProto =
+    typeof headers["x-forwarded-proto"] === "string"
+      ? headers["x-forwarded-proto"].split(",")[0].trim()
+      : "";
+  const scheme = forwardedProto || "https";
+  return `${scheme}://${host}`;
+};
 
 // ---------- HWIDマスク ----------
 
@@ -303,10 +330,10 @@ const server = http.createServer((req, res) => {
       });
       res.end("{}");
 
-      // APK配信URL
-      const apkUrl =
-        `https://${req.headers.host || `localhost:${PORT}`}` +
-        APK_PATH;
+      // APK配信URL。Hostヘッダから組み立てるが、ngrokやリバースプロキシは
+      // Hostをlocalhostに書き替えるため、転送元の実ホスト(X-Forwarded-Host /
+      // X-Forwarded-Proto)があればそちらを優先する。上書きはPUBLIC_BASE_URL
+      const apkUrl = `${publicBaseUrl(req)}${APK_PATH}`;
 
       for (const event of payload.events || []) {
 

@@ -49,6 +49,36 @@ const maskHwid = (hwid) => {
   return hwid.slice(0, 2) + "******" + hwid.slice(-2);
 };
 
+// 明示的に外部公開URLを指定したいときはこちら(未設定ならヘッダから推測)
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || "";
+
+/**
+ * 外部公開URLのスキーム+ホスト。ngrok等はHostをlocalhostに書き替えるため
+ * X-Forwarded-Host / X-Forwarded-Proto を優先する
+ */
+const publicBaseUrl = (req) => {
+  if (PUBLIC_BASE_URL) {
+    return PUBLIC_BASE_URL.replace(/\/$/, "");
+  }
+  const headers = req.headers;
+
+  const forwardedHost =
+    typeof headers["x-forwarded-host"] === "string"
+      ? headers["x-forwarded-host"].split(",")[0].trim()
+      : "";
+
+  const host = forwardedHost || headers.host || `localhost:${port}`;
+
+  const forwardedProto =
+    typeof headers["x-forwarded-proto"] === "string"
+      ? headers["x-forwarded-proto"].split(",")[0].trim()
+      : "";
+
+  const scheme = forwardedProto || "https";
+
+  return `${scheme}://${host}`;
+};
+
 // ---------- LINE Webhook署名検証 ----------
 
 function verifySignature(rawBody, signature) {
@@ -238,10 +268,8 @@ const server = http.createServer(async (req, res) => {
     });
     res.end("{}");
 
-    // APK配信URL。公開URLで受けているためHostヘッダがそのURLになる
-    // (Codespacesの公開アドレスでも環境変数なしで動く)
-    const apkUrl =
-      `https://${req.headers.host || `localhost:${port}`}` + APK_PATH;
+    // APK配信URL(ngrok等のプロキシを考慮してX-Forwarded-Hostを優先)
+    const apkUrl = `${publicBaseUrl(req)}${APK_PATH}`;
 
     // Webhookイベントを非同期処理
     for (const event of payload.events ?? []) {

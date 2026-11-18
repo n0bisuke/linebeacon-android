@@ -5,6 +5,7 @@
 | やりたいこと | 見るドキュメント |
 |---|---|
 | **GitHub Codespacesですべて試す**(ビルド・APK・Webhook・検知) | [CODESPACES.md](CODESPACES.md) ← 1本道の手順がこの順で書いてある |
+| **obnizを発信機にしてLINE Simple Beaconを試す** | [OBNIZ.md](OBNIZ.md) |
 | **ローカルマシンで動かす**(Dockerなし/あり/devcontainer) | [LOCAL-CONTAINER.md](LOCAL-CONTAINER.md) |
 | **linebot(obniz含む)の使い方・設定一覧** | [../linebot/README.md](../linebot/README.md) |
 | **アプリ自体の仕様・ビルド方法** | [../android-app/README.md](../android-app/README.md) |

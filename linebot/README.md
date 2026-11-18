@@ -44,6 +44,8 @@ npm start                     # 既定: http://localhost:65135/webhook
 
 ## obnizを発信機にする(npm run start:obniz)
 
+**詳細な手順・トラブルシューティングは [docs/OBNIZ.md](../docs/OBNIZ.md)** を参照。概要のみ記載します:
+
 obnizのBLEをLINE Simple Beacon発信機として動かし、Webhook受信も同じプロセスで行う構成。**LINE Official Account Managerでビーコン端末として登録済みのHWID**を使うこと(未登録のHWIDではLINEが検知しない):
 
 ```

@@ -13,7 +13,9 @@
   "onCreateCommand": "bash .devcontainer/setup-android-sdk.sh",
   "remoteEnv": {
     "ANDROID_HOME": "/home/vscode/android-sdk",
-    "PATH": "${containerEnv:PATH}:/home/vscode/android-sdk/platform-tools"
+    // sdkmanagerはcmdline-tools配下にあるのでPATHに含める(含めないと
+    // postStartCommandのsdkmanagerコマンドが「SDK未インストール」誤検知する)
+    "PATH": "${containerEnv:PATH}:/home/vscode/android-sdk/platform-tools:/home/vscode/android-sdk/cmdline-tools/latest/bin"
   },
-  "postStartCommand": "sdkmanager --version >/dev/null 2>&1 || echo 'SDK未インストール: onCreateが失敗していないか確認してください'"
+  "postStartCommand": "\"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager\" --version >/dev/null 2>&1 || echo 'SDK未インストール: onCreateが失敗していないか確認してください'"
 }

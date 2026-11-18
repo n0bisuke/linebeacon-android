@@ -1,7 +1,12 @@
 
 import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import Obniz from "obniz";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const {
   OBNIZ_ID,
@@ -11,6 +16,14 @@ const {
   PORT = "65135",
   WEBHOOK_PATH = "/webhook",
   MASK_HWID = "1",
+  APK_FILE = path.join(
+    __dirname,
+    "..",
+    "android-app",
+    "dist",
+    "app-debug.apk"
+  ),
+  APK_PATH = "/apk",
 } = process.env;
 
 // ---------- 設定チェック ----------
@@ -89,7 +102,7 @@ async function replyText(replyToken, text) {
 
 // ---------- Beaconイベント処理 ----------
 
-async function handleEvent(event) {
+async function handleEvent(event, apkUrl) {
   if (event.mode === "standby") return;
 
   if (event.type === "beacon") {
@@ -116,7 +129,22 @@ async function handleEvent(event) {
     event.type === "message" &&
     event.message?.type === "text"
   ) {
-    const text = event.message.text;
+    const text = event.message.text.trim();
+
+    if (text.toLowerCase() === "apk") {
+      // server.jsと同じ: APKのダウンロードURLを返す(実機インストール用)
+      console.log(`[LINE] APK URLを返信: ${apkUrl}`);
+      await replyText(
+        event.replyToken,
+        [
+          "⬇️ アプリのダウンロード",
+          apkUrl,
+          "",
+          "URLを開いてAPKをダウンロード後、インストールしてください(「提供元不明アプリ」の許可が必要です)",
+        ].join("\n")
+      );
+      return;
+    }
 
     console.log("[LINE] 受信:", text);
 
@@ -137,7 +165,33 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, {
       "Content-Type": "text/plain; charset=utf-8",
     });
-    res.end("obniz LINE Beacon Server\n");
+    res.end(`obniz LINE Beacon Server\nGET ${APK_PATH} でAPKを配信中\n`);
+    return;
+  }
+
+  // APK配信(Codespaces等、adbが届かない環境での実機インストール用)
+  if (req.method === "GET" && req.url === APK_PATH) {
+    fs.stat(APK_FILE, (err, stat) => {
+      if (err || !stat.isFile()) {
+        res.writeHead(404, {
+          "Content-Type": "text/plain; charset=utf-8",
+        });
+        res.end(
+          "APKが見つかりません: android-app/dist/app-debug.apk をビルドして配置してください\n"
+        );
+        return;
+      }
+      res.writeHead(200, {
+        "Content-Type":
+          "application/vnd.android.package-archive",
+        "Content-Length": stat.size,
+        "Content-Disposition":
+          'attachment; filename="app-debug.apk"',
+      });
+      fs.createReadStream(APK_FILE)
+        .on("error", () => res.destroy())
+        .pipe(res);
+    });
     return;
   }
 
@@ -184,9 +238,14 @@ const server = http.createServer(async (req, res) => {
     });
     res.end("{}");
 
+    // APK配信URL。公開URLで受けているためHostヘッダがそのURLになる
+    // (Codespacesの公開アドレスでも環境変数なしで動く)
+    const apkUrl =
+      `https://${req.headers.host || `localhost:${port}`}` + APK_PATH;
+
     // Webhookイベントを非同期処理
     for (const event of payload.events ?? []) {
-      handleEvent(event).catch((error) => {
+      handleEvent(event, apkUrl).catch((error) => {
         console.error("[LINE] 処理エラー:", error.message);
       });
     }

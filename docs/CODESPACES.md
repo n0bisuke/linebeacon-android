@@ -19,7 +19,7 @@ Codespace作成 → ./gradlew test assembleDebug  → APK完成(dist/)
 
 1. [LINE Developers Console](https://developers.line.biz/) でMessaging APIチャネルを作成
 2. 「チャネル基本設定」から **Channel secret** をコピー(手順3で使う)
-3. 返信・オウム返しを試すなら「Messaging API設定」→ **Channel access token(長期)** も発行してコピー
+3. 「Messaging API設定」→ **Channel access token(長期)** を発行してコピー(検知返信・`apk` URL返信・オウム返しに必須)
 4. [LINE Official Account Manager](https://manager.line.biz/beacon/register) で**ビーコン端末(HWID)の登録**を済ませておく(動作確認で発信元の端末に登録済みHWIDを設定するため)
 
 ---
@@ -79,7 +79,7 @@ mkdir -p dist && cp app/build/outputs/apk/debug/app-debug.apk dist/app-debug.apk
 
 ```bash
 cd /workspaces/linebeacon-android/linebot
-cp .env.example .env              # 中身を編集して LINE_CHANNEL_SECRET(と必要なら ACCESS_TOKEN)を貼る
+cp .env.example .env              # LINE_CHANNEL_SECRET と LINE_CHANNEL_ACCESS_TOKEN の両方を貼る(返信・'apk'返信に必須)
 npm install                       # obnizパッケージ(初回のみ)
 npm start                         # :65135 で待受(0xFE6F)
 ```

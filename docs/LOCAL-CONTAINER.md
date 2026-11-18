@@ -101,7 +101,7 @@ Node.js(**>= 20.6**)が入っているPCならそのまま動きます:
 
 ```bash
 cd linebot
-cp .env.example .env    # LINE_CHANNEL_SECRET を貼る(.env必須)
+cp .env.example .env    # LINE_CHANNEL_SECRET と LINE_CHANNEL_ACCESS_TOKEN を貼る(.env必須)
 npm start               # :65135
 ```
 

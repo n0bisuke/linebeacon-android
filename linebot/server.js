@@ -13,7 +13,7 @@
  *
  * 環境変数:
  *   LINE_CHANNEL_SECRET
- *   LINE_CHANNEL_ACCESS_TOKEN (任意)
+ *   LINE_CHANNEL_ACCESS_TOKEN (検知の返信・'apk'へのURL返信・オウム返しに必須)
  *   PORT / WEBHOOK_PATH (任意)
  *   MASK_HWID (任意)
  *   APK_FILE / APK_PATH (任意)

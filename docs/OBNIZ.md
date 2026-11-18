@@ -13,7 +13,7 @@ obniz(BLE発信) ─→ 受信側スマホのLINE ─→ LINEサーバー ─→
 | 項目 | 備考 |
 |---|---|
 | **obniz本体**(OS 2.0以降) | Wi-Fiに接続できること。ディスプレイ表示があるモデルだと進行状況が見やすい |
-| **LINE Developers ConsoleのMessaging APIチャネル** | Channel secret(**必須**)・Channel access token(**obniz-serverでは必須**) |
+| **LINE Developers ConsoleのMessaging APIチャネル** | Channel secret(**必須**)・Channel access token(**必須**) |
 | **登録済みHWID** | [LINE Official Account Manager](https://manager.line.biz/beacon/register)で「LINE Simple Beacon」のハードウェアIDを発行済みのもの |
 | **Node.js >= 20.6** | `fetch` / `AbortSignal.timeout` / `--env-file` を使用 |
 | **受信側のスマホ** | LINEアプリで「LINE Beacon」有効、公式アカウントと友だち済み |
@@ -31,7 +31,7 @@ cp .env.example .env
 
 ```
 LINE_CHANNEL_SECRET=<Channel secret>            # 必須(署名検証)
-LINE_CHANNEL_ACCESS_TOKEN=<チャネルアクセストークン>  # obniz-serverでは必須(検知返信で必要)
+LINE_CHANNEL_ACCESS_TOKEN=<チャネルアクセストークン>  # 必須(検知返信・apk返信・オウム返しで必要)
 OBNIZ_ID=<obnizのID 例: 1234-5678>              # obniz本体画面/obnizアプリで確認
 LINE_BEACON_HWID=<登録済みHWID 10桁HEX>          # 例: 0102030405(未登録HWIDだとLINEは検知しない)
 # MASK_HWID=1                                   # 既定ON(ログ・返信のHWIDを先頭2/末尾2にマスク)
